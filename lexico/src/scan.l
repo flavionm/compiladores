@@ -29,6 +29,9 @@ ID	    {L}({L}|{D})*
 {ID}	{return _ID;}
 
 ">="	{return _MAIG;}
+"<="	{return _MEIG;}
+"=="	{return _IG;}
+"!="	{return _DIF;}
 
 .       {return *yytext; /* Essa deve ser a última regra. Dessa forma qualquer caractere isolado será retornado pelo seu código ascii. */}
 
