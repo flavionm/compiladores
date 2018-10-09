@@ -4,32 +4,33 @@
 
 using namespace std;
 
-enum TOKEN { _INT = 256, _FLOAT, _ID, _IF, _MAIG };
+enum TOKEN {_ID = 256, _FOR, _IF, _INT, _FLOAT, _MAIG, _MEIG, _IG, _DIF, _STRING, _COMENTARIO};
 
 %}
 
 /* Coloque aqui definições regulares */
 
-D	[0-9]
-L	[A-Za-z_]
+D	    [0-9]
+L	    [A-Za-z_]
 
-WS	[ \t\n]
-INT	{D}+
+WS	    [ \t\n]
+INT	    {D}+
 FLOAT	{INT}("."{INT})?([Ee]("+"|"-")?{INT})?
-ID	{L}({L}|{D})*
+ID	    {L}({L}|{D})*
 
 %%
     /* Padrões e ações. Nesta seção, comentários devem ter um tab antes */
 
-{WS}	{ /* ignora espaço */ }
-"if"	{ return _IF; }
-{INT}	{ return _INT; }
-{FLOAT}	{ return _FLOAT; }
-{ID}	{ return _ID; }
+{WS}	{/* ignora espaço */}
+"if"	{return _IF;}
+"for"   {return _FOR;}
+{INT}	{return _INT;}
+{FLOAT}	{return _FLOAT;}
+{ID}	{return _ID;}
 
-">="	{ return _MAIG; }
+">="	{return _MAIG;}
 
-.       { return *yytext; /* Essa deve ser a última regra. Dessa forma qualquer caractere isolado será retornado pelo seu código ascii. */ }
+.       {return *yytext; /* Essa deve ser a última regra. Dessa forma qualquer caractere isolado será retornado pelo seu código ascii. */}
 
 %%
 
@@ -38,8 +39,8 @@ ID	{L}({L}|{D})*
 int main() {
     int token = 0;
 
-    while( (token = yylex()) != EOF )
-        printf( "Token: %d %s\n", token, yytext );
+    while((token = yylex()) != EOF)
+        printf("Token: %d %s\n", token, yytext);
 
     return 0;
 }
