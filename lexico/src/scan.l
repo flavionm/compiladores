@@ -12,11 +12,13 @@ enum TOKEN {_ID = 256, _FOR, _IF, _INT, _FLOAT, _MAIG, _MEIG, _IG, _DIF, _STRING
 
 D	    [0-9]
 L	    [A-Za-z_]
-
 WS	    [ \t\n]
+
 INT	    {D}+
 FLOAT	{INT}("."{INT})?([Ee]("+"|"-")?{INT})?
 ID	    {L}({L}|{D})*
+STR     \"([^\"\n]|\\\"|\"\")*\"
+/*COM     \/\*[^(\*\/)]*\*\/*/
 
 %%
     /* Padrões e ações. Nesta seção, comentários devem ter um tab antes */
@@ -27,6 +29,8 @@ ID	    {L}({L}|{D})*
 {INT}	{return _INT;}
 {FLOAT}	{return _FLOAT;}
 {ID}	{return _ID;}
+{STR}   {return _STRING;}
+    /*{COM}   {return _COMENTARIO;}*/
 
 ">="	{return _MAIG;}
 "<="	{return _MEIG;}
