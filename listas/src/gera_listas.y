@@ -12,21 +12,26 @@ int linha = 1;
 int coluna = 1;
 
 struct Atributos {
-	string valor;
-	string codigo;
-	int linha;
+  string v;
+  string c;
+  int linha;
 };
 
 struct Lista {
-	bool sublista;
-	string valorString;
-	Lista* valorSublista;
-	Lista* proximo;
+  bool sublista;
+  string valorString;
+  Lista* valorSublista;
+  Lista* proximo;
 };
 
-int yylex();
+extern "C" int yylex();
 int yyparse();
 void yyerror(const char *);
+
+string geraNo( string pi, string valor );
+string geraNomeVar();
+
+int nVar = 0;
 
 %}
 
@@ -35,35 +40,63 @@ void yyerror(const char *);
 
 %%
 
-S : L { cout << "Saida:\n"
-						 << "Lista t1;\n"
-						 << $1.codigo << endl; }
-	;
+S : L { cout << "#include <string>\n\n"
+		        "using namespace std;\n\n"
+                "struct Lista {\n"
+		        "  bool sublista;\n"
+		        "  string valorString;\n"
+		        "  Lista* valorSublista;\n"
+		        "  Lista* proximo;\n"
+		        "};\n\n"
+		        "Lista* geraLista() {\n"
+                "  Lista *p0";
+        for( int i = 1; i < nVar; i++ )
+            cout << ", *p" << i;
+        cout << ";\n\n";
+        cout << $1.c
+             << "  return " + $1.v + ";\n"
+                "}"
+             << endl; }
+  ;
 
-L : A ',' L
-	| A
-	;
+L : A ',' L	{ $$.c = $1.c + "\n" + $3.c
+                       + "  " + $1.v + "->proximo = " + $3.v + ";\n\n";
+                  $$.v = $1.v; }
+  | A		{ $$.c = $1.c + "\n" +
+                       + "  " + $1.v + "->proximo = nullptr;\n\n"; }
+  ;
 
-A : TK_ID    { $$.codigo = (string) "t1.sublista = false;\n" +
-													 "t1.valorString = \"" + $1.valor + "\";\n" +
-													 "t1.valorSublista = nullptr;\n" +
-													 "t1.proximo = nullptr;\n"; }
-	| TK_CINT
-	| TK_CDOUBLE
-	| '(' L ')'	{ $0 = $2; }
-	;
+A : TK_ID    	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
+  | TK_CINT	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
+  | TK_CDOUBLE	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
+  | '(' L ')'
+  ;
 
 %%
 
 #include "lex.yy.c"
 
 void yyerror( const char* st ) {
-	 puts( st );
-	 printf( "Linha %d, coluna %d, proximo a: %s\n", linha, coluna, yytext );
-	 exit( 0 );
+   puts( st );
+   printf( "Linha %d, coluna %d, proximo a: %s\n", linha, coluna, yytext );
+   exit( 0 );
 }
 
-int main()
-{
-	yyparse();
+string geraNomeVar() {
+  char buf[20] = "";
+
+  sprintf( buf, "p%d", nVar++ );
+
+  return buf;
+}
+
+string geraNo( string pi, string valor ) {
+ return "  " + pi + " = new Lista;\n"
+        "  " + pi + "->sublista = false;\n"
+        "  " + pi + "->valorString = \"" + valor + "\";\n"
+        "  " + pi + "->valorSublista = nullptr;\n";
+}
+
+int main() {
+  yyparse();
 }

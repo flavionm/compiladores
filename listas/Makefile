@@ -17,6 +17,10 @@ EXECUTABLE	:= main
 endif
 LOUT		:= lex.yy.c
 YOUT		:= y.tab.c
+IN			:= lista.txt
+OUT			:= lista.c
+TEST		:= main.cpp
+FINAL		:= lista
 
 all: $(BIN)/$(EXECUTABLE)
 
@@ -24,7 +28,7 @@ clean:
 	$(RM) $(BIN)/*
 
 run: all
-	./$(BIN)/$(EXECUTABLE)
+	./$(BIN)/$(EXECUTABLE) < $(SRC)/$(IN) > $(BIN)/$(OUT); $(CC) $(C_FLAGS) $(SRC)/$(TEST) $(BIN)/$(OUT) -o $(BIN)/$(FINAL); ./$(BIN)/$(FINAL)
 
 $(BIN)/$(EXECUTABLE): $(BIN)/$(YOUT)
 	$(CC) $(C_FLAGS) -I$(INCLUDE) -L$(LIB) $^ -o $@ $(LIBRARIES)

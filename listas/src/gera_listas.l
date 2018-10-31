@@ -11,13 +11,13 @@ OPR	[(),]
 "\t"       { coluna += 4; }
 " "        { coluna++; }
 "\n"	   { linha++; coluna = 1; }
-{INT} 	   { yylval.valor = yytext; coluna += strlen(yytext); return TK_CINT; }
-{DOUBLE}   { yylval.valor = yytext; coluna += strlen(yytext); return TK_CDOUBLE; }
+{INT} 	   { yylval.v = yytext; coluna += strlen(yytext); return TK_CINT; }
+{DOUBLE}   { yylval.v = yytext; coluna += strlen(yytext); return TK_CDOUBLE; }
 
-{ID}       { yylval.valor = yytext; coluna += strlen(yytext); return TK_ID; }
-{OPR}      { yylval.valor = yytext; coluna += strlen(yytext); return yytext[0]; }
+{ID}       { yylval.v = yytext; coluna += strlen(yytext); return TK_ID; }
+{OPR}      { yylval.v = yytext; coluna += strlen(yytext); return yytext[0]; }
 
 
-.          { coluna++; yylval.valor = yytext; yyerror( "Caractere inválido!\n" ); }
+.          { coluna++; yylval.v = yytext; yyerror( "Caractere inválido!\n" ); }
 
 %%
