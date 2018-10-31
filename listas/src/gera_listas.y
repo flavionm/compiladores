@@ -12,16 +12,16 @@ int linha = 1;
 int coluna = 1;
 
 struct Atributos {
-  string v;
-  string c;
-  int linha;
+    string v;
+    string c;
+    int linha;
 };
 
 struct Lista {
-  bool sublista;
-  string valorString;
-  Lista* valorSublista;
-  Lista* proximo;
+    bool sublista;
+    string valorString;
+    Lista* valorSublista;
+    Lista* proximo;
 };
 
 extern "C" int yylex();
@@ -41,34 +41,36 @@ int nVar = 0;
 %%
 
 S : L { cout << "#include <string>\n\n"
-		        "using namespace std;\n\n"
+                "using namespace std;\n\n"
                 "struct Lista {\n"
-		        "  bool sublista;\n"
-		        "  string valorString;\n"
-		        "  Lista* valorSublista;\n"
-		        "  Lista* proximo;\n"
-		        "};\n\n"
-		        "Lista* geraLista() {\n"
-                "  Lista *p0";
+                "\tbool sublista;\n"
+                "\tstring valorString;\n"
+                "\tLista* valorSublista;\n"
+                "\tLista* proximo;\n"
+                "};\n\n"
+                "Lista* geraLista() {\n"
+                "\tLista *p0";
         for( int i = 1; i < nVar; i++ )
             cout << ", *p" << i;
         cout << ";\n\n";
         cout << $1.c
-             << "  return " + $1.v + ";\n"
+             << "\treturn " + $1.v + ";\n"
                 "}"
              << endl; }
   ;
 
 L : A ',' L	{ $$.c = $1.c + "\n" + $3.c
-                       + "  " + $1.v + "->proximo = " + $3.v + ";\n\n";
-                  $$.v = $1.v; }
+                     + "\t" + $1.v + "->proximo = "
+                     + $3.v + ";\n\n";
+              $$.v = $1.v; }
   | A		{ $$.c = $1.c + "\n" +
-                       + "  " + $1.v + "->proximo = nullptr;\n\n"; }
+                     + "\t" + $1.v
+                     + "->proximo = nullptr;\n\n"; }
   ;
 
-A : TK_ID    	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
+A : TK_ID { $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
   | TK_CINT	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
-  | TK_CDOUBLE	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
+  | TK_CDOUBLE { $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
   | '(' L ')'
   ;
 
@@ -76,27 +78,27 @@ A : TK_ID    	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
 
 #include "lex.yy.c"
 
-void yyerror( const char* st ) {
-   puts( st );
-   printf( "Linha %d, coluna %d, proximo a: %s\n", linha, coluna, yytext );
-   exit( 0 );
+void yyerror (const char* st) {
+    puts( st );
+    printf ("Linha %d, coluna %d, proximo a: %s\n", linha, coluna, yytext);
+    exit (0);
 }
 
 string geraNomeVar() {
-  char buf[20] = "";
+    char buf[20] = "";
 
-  sprintf( buf, "p%d", nVar++ );
+    sprintf (buf, "p%d", nVar++);
 
-  return buf;
+    return buf;
 }
 
-string geraNo( string pi, string valor ) {
- return "  " + pi + " = new Lista;\n"
-        "  " + pi + "->sublista = false;\n"
-        "  " + pi + "->valorString = \"" + valor + "\";\n"
-        "  " + pi + "->valorSublista = nullptr;\n";
+string geraNo (string pi, string valor) {
+ return "\t" + pi + " = new Lista;\n"
+        "\t" + pi + "->sublista = false;\n"
+        "\t" + pi + "->valorString = \"" + valor + "\";\n"
+        "\t" + pi + "->valorSublista = nullptr;\n";
 }
 
 int main() {
-  yyparse();
+    yyparse();
 }
