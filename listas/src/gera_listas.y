@@ -28,7 +28,8 @@ extern "C" int yylex();
 int yyparse();
 void yyerror(const char *);
 
-string geraNo( string pi, string valor );
+string geraNo (string pi, string valor);
+string geraSubNo (string pi, string valor);
 string geraNomeVar();
 
 int nVar = 0;
@@ -68,10 +69,11 @@ L : A ',' L	{ $$.c = $1.c + "\n" + $3.c
                      + "->proximo = nullptr;\n\n"; }
   ;
 
-A : TK_ID { $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
-  | TK_CINT	{ $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
-  | TK_CDOUBLE { $$.v = geraNomeVar(); $$.c = geraNo( $$.v, $1.v ); }
-  | '(' L ')'
+A : TK_ID { $$.v = geraNomeVar(); $$.c = geraNo ($$.v, $1.v); }
+  | TK_CINT	{ $$.v = geraNomeVar(); $$.c = geraNo ($$.v, $1.v); }
+  | TK_CDOUBLE { $$.v = geraNomeVar(); $$.c = geraNo ($$.v, $1.v); }
+  | '(' L ')' { $$.v = geraNomeVar(); $$.c = $2.c + geraSubNo ($$.v, $2.v); }
+  | '(' ')' { $$.v = geraNomeVar(); $$.c = geraSubNo ($$.v, "nullptr"); }
   ;
 
 %%
@@ -93,10 +95,17 @@ string geraNomeVar() {
 }
 
 string geraNo (string pi, string valor) {
- return "\t" + pi + " = new Lista;\n"
-        "\t" + pi + "->sublista = false;\n"
-        "\t" + pi + "->valorString = \"" + valor + "\";\n"
-        "\t" + pi + "->valorSublista = nullptr;\n";
+    return "\t" + pi + " = new Lista;\n"
+           "\t" + pi + "->sublista = false;\n"
+           "\t" + pi + "->valorString = \"" + valor + "\";\n"
+           "\t" + pi + "->valorSublista = nullptr;\n";
+}
+
+string geraSubNo (string pi, string valor) {
+    return "\t" + pi + " = new Lista;\n"
+           "\t" + pi + "->sublista = true;\n"
+           "\t" + pi + "->valorString = \"\";\n"
+           "\t" + pi + "->valorSublista = " + valor + ";\n";
 }
 
 int main() {
