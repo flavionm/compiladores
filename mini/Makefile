@@ -1,7 +1,7 @@
 CC		:= g++
 LL		:= flex
 YY		:= bison
-C_FLAGS := -std=c++11 -pedantic -pedantic-errors -Wall -Wextra -march=native -Og
+C_FLAGS := -std=c++11 -march=native -Og
 
 BIN		:= bin
 SRC		:= src
@@ -29,11 +29,11 @@ all: $(BIN)/$(YOUT)
 clean:
 	$(RM) $(BIN)/*
 
-run: ${BIN}/${EXEC}
+try: ${BIN}/${EXEC}
 	./$^
 
-${BIN}/${EXEC}: ${BIN}/${OUT}
-	$(CC) ${C_FLAGS} $^ -o $@
+run: ${BIN}/${OUT}
+	$(CC) ${C_FLAGS} $^ -o ${BIN}/${EXEC}
 
 ${BIN}/${OUT}: all
 	./$(BIN)/$(EXECUTABLE) < ${SRC}/${IN} > $@

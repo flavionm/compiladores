@@ -44,7 +44,7 @@ S:	CMDS {
 		+ "\t" + declaraVars() + "\n"
 		+ $1.c + "\n"
 		+ "\treturn 0;\n"
-		+ "}\n";
+		+ "}";
 		cout << $$.c << endl;
 	}
 	;
@@ -95,7 +95,8 @@ ENTRADA:	TK_CONSOLE TK_SHIFTR TK_ID {
 
 SAIDA:	TK_CONSOLE TK_SHIFTL E {
 			$$.c = $3.c
-			+ "\t" + "cout << " + $3.v + " << endl;\n";
+			+ "\t" + "cout << " + $3.v + ";\n"
+			+ "\t cout << endl;\n";
 		}
 		;
 
@@ -112,7 +113,20 @@ FOR:	TK_FOR TK_ID TK_IN '[' E TK_2PT E ']' CMD {
 		}
 		;
 
-IF:	TK_IF E TK_THEN CMD TK_ELSE CMD
+IF:	TK_IF E TK_THEN CMD TK_ELSE CMD {
+		$$.c = $2.c
+		+ "\tif (" + $2.v + ")\n {"
+		+ $4.c
+		+ "\t} else {\n"
+		+ $6.c
+		+ "\t}\n";
+	}
+	| TK_IF E TK_THEN CMD  {
+		$$.c = $2.c
+		+ "\tif (" + $2.v + ") {\n"
+		+ $4.c
+		+ "\t}\n";
+	}
 	;
 
 ATR:	TK_ID '=' E ';' {
