@@ -1,8 +1,4 @@
-var a;
-
+var a, b;
 console >> a;
-
-if a then
-  console << 1
-else
-  console << 0;
+for b in [0..a]
+  console << b*b << "; ";

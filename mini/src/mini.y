@@ -29,7 +29,7 @@ int nVar = 0;
 %}
 
 %start S
-%token CINT CDOUBLE TK_ID TK_VAR TK_CONSOLE TK_SHIFTR TK_SHIFTL
+%token CINT CSTR CDOUBLE TK_ID TK_VAR TK_CONSOLE TK_SHIFTR TK_SHIFTL
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE
 
 %left '+' '-'
@@ -82,21 +82,41 @@ VAR:	TK_ID '[' CINT ']' {
 		}
 		;
 
-ENTRADA:	TK_CONSOLE TK_SHIFTR TK_ID {
+ENTRADA:	ENTRADA TK_SHIFTR TK_ID {
+				$$.c = $1.c
+				+ "\tcin >>" + $3.v + ";\n";
+			}
+			| ENTRADA TK_SHIFTR TK_ID '[' E ']' {
+				$$.v = geraNomeVar();
+				$$.c = $1.c + $5.c
+				+ "\tcin >> " + $$.v + ";\n"
+				+ "\t" + $3.v + "[" + $5.v + "] = " + $$.v + ";\n";
+			}
+			| TK_CONSOLE TK_SHIFTR TK_ID {
 				$$.c = "\tcin >> " + $3.v + ";\n";
 			}
 			| TK_CONSOLE TK_SHIFTR TK_ID '[' E ']' {
 				$$.v = geraNomeVar();
 				$$.c = $5.c
-				+ "\t" + "cin >> " + $$.v + ";\n"
+				+ "\tcin >> " + $$.v + ";\n"
 				+ "\t" + $3.v + "[" + $5.v + "] = " + $$.v + ";\n";
 			}
 			;
 
-SAIDA:	TK_CONSOLE TK_SHIFTL E {
+SAIDA:	SAIDA TK_SHIFTL E {
+			$$.c = $1.c + $3.c
+			+ "\t" + "cout << " + $3.v + ";\n";
+		}
+		| SAIDA TK_SHIFTL CSTR {
+			$$.c = $1.c
+			+ "\tcout << " + $3.v + ";\n";
+		}
+		| TK_CONSOLE TK_SHIFTL E {
 			$$.c = $3.c
-			+ "\t" + "cout << " + $3.v + ";\n"
-			+ "\t cout << endl;\n";
+			+ "\tcout << " + $3.v + ";\n";
+		}
+		| TK_CONSOLE TK_SHIFTL CSTR {
+			$$.c = string("\tcout << ") + $3.v + ";\n";
 		}
 		;
 
