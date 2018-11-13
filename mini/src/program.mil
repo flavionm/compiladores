@@ -1,0 +1,6 @@
+var a, b, tab[10];
+
+console >> a;
+
+for b in [0..a]
+  console << b*b;
