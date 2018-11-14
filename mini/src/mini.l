@@ -9,7 +9,6 @@ DOUBLE	{DIGITO}+("."{DIGITO}+)?
 ID		{LETRA}({LETRA}|{DIGITO})*
 STR     \"([^\"\n]|\\\"|\"\")*\"
 
-
 %%
 
 "\t"	{ coluna += 4; }
@@ -24,12 +23,16 @@ STR     \"([^\"\n]|\\\"|\"\")*\"
 "console"	{ return token (TK_CONSOLE); }
 ">>"	{ return token (TK_SHIFTR); }
 "<<"	{ return token (TK_SHIFTL); }
+"=="	{ return token (TK_EQUALS); }
 "for"	{ return token (TK_FOR); }
 "in"	{ return token (TK_IN); }
 ".."	{ return token (TK_2PT); }
 "if"	{ return token (TK_IF); }
 "then"	{ return token (TK_THEN); }
 "else"	{ return token (TK_ELSE); }
+"endl"	{ return token (TK_ENDL); }
+"begin"	{ return token (TK_BEGIN); }
+"end"	{ return token (TK_END); }
 
 {ID}	{ return token (TK_ID); }
 
