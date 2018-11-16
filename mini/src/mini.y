@@ -34,6 +34,7 @@ int nLabel = 0;
 %token CINT CSTR CDOUBLE TK_ID TK_VAR TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE TK_ENDL TK_BEGIN TK_END
 
+%right '='
 %nonassoc '>' '<' TK_EQUALS
 %left '+' '-'
 %left '*' '/' '%'
@@ -171,12 +172,12 @@ IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK {
 	}
 	;
 
-ATR:	TK_ID '=' E ';' {
+ATR:	TK_ID '=' E {
 			$$.v = $3.v;
 			$$.c = $3.c
 			+ "\t" + $1.v + " = " + $3.v + ";\n";
 		}
-		| TK_ID '[' E ']' '=' E ';' {
+		| TK_ID '[' E ']' '=' E {
 			$$.c = $3.c + $6.c
 			+ "\t" + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
 			$$.v = $6.v;
