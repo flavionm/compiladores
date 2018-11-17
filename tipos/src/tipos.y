@@ -37,7 +37,7 @@ int nLabel = 0;
 %}
 
 %start S
-%token CINT CSTR CDOUBLE TK_ID TK_INT TK_DOUBLE TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
+%token CINT CSTR CDOUBLE TK_ID TK_INT TK_DOUBLE TK_STRING TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE TK_ENDL TK_BEGIN TK_END
 
 %right '='
@@ -65,31 +65,28 @@ BLOCK:	TK_BEGIN CMDS TK_END {
 		| CMD
 		;
 
-CMDS:	CMDS CMD ';' {
+CMDS:	CMDS CMD {
 			$$.c = $1.c + $2.c;
 		}
-		| CMD ';'
+		| CMD
 		;
 
-CMD:	DECLVAREND
-		| ENTRADA
-		| SAIDA
-		| ATR
-		| FOR
+CMD:	DECLVAR ';' {
+			$$.c = $1.c + ";\n";
+		}
+		| ENTRADA ';'
+		| SAIDA ';'
+		| ATR ';'
+		| FOR ';'
 		| IF
 		;
 
-DECLVAREND:	DECLVAR ';' {
-				$$.c = $1.c + ";\n";
-			}
-			;
-
-DECLVAR:	DECLVAR VAR {
-				$$.c = $1.c + ", " + $2.v;
+DECLVAR:	DECLVAR ',' VAR {
+				$$.c = $1.c + ", " + $3.v;
 				$$.v = $1.v;
-				var_symtab[$2.v] = $1.v;
+				var_symtab[$3.v] = $1.v;
 			}
-			TYPE VAR {
+			| TYPE VAR {
 				$$.c = "\t" + $1.v + " " + $2.v;
 				$$.v = $1.v;
 				var_symtab[$2.v] = $1.v;
@@ -98,12 +95,13 @@ DECLVAR:	DECLVAR VAR {
 
 TYPE:	TK_INT
 		| TK_DOUBLE
+		| TK_STRING
 		;
 
-VAR:	TK_ID '[' CINT ']' {
+VAR:	/*TK_ID '[' CINT ']' {
 			$$.c = $1.v + "[" + $3.v + "]";
 		}
-		| TK_ID {
+		|*/ TK_ID {
 			$$.v = $1.v;
 		}
 		;
@@ -167,7 +165,7 @@ FOR:	TK_FOR TK_ID TK_IN '[' E TK_2PT E ']' BLOCK {
 		}
 		;
 
-IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK {
+IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK ';' {
 		$$.c = $2.c
 		+ "\tif (" + $2.v + ") goto " + geraNomeLabel("if_true") + ";\n"
 		+ $6.c

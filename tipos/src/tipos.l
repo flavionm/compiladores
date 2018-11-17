@@ -21,6 +21,7 @@ STR     \"([^\"\n]|\\\"|\"\")*\"
 
 "int"	{ return token (TK_INT); }
 "double"	{ return token (TK_DOUBLE); }
+"string"	{ return token (TK_STRING); }
 "console"	{ return token (TK_CONSOLE); }
 ">>"	{ return token (TK_SHIFTR); }
 "<<"	{ return token (TK_SHIFTL); }
