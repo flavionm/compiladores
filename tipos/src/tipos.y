@@ -22,16 +22,27 @@ struct Atributos {
 };
 
 map<string, Tipo> var_symtab;
+map<string,Tipo> resOpr = {
+	{ "+intint", "int" }, { "+intdouble", "double" }, { "+doubleint", "double" }, { "+doubledouble", "double" },
+	{ "+charchar", "string" }, { "+charstring", "string" }, { "+stringchar", "string" }, { "+stringstring", "string" },
+	{ "+charint", "int" }, { "+intchar", "int" },
+	{ "-intint", "int" }, { "-intdouble", "double" }, { "-doubleint", "double" }, { "-doubledouble", "double" },
+	{ "-charchar", "string" }, { "-charstring", "string" }, { "-stringchar", "string" }, { "-stringstring", "string" },
+	{ "-charint", "int" }, { "-intchar", "int" }
+};
 
 int yylex();
 int yyparse();
 void yyerror (const char *);
 
-string geraNomeVar();
+Tipo buscaTipoVar (string v);
+string geraNomeVar (Tipo t);
 string geraNomeLabel (string);
 string declaraVars();
+Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b);
+Atributos geraCodigoOperador (string operador, Atributos a, Atributos b);
 
-int nVar = 0;
+map<Tipo, int> nVar;
 int nLabel = 0;
 
 %}
@@ -110,48 +121,48 @@ ENTRADA:	ENTRADA TK_SHIFTR TK_ID {
 				$$.c = $1.c
 				+ "\tcin >>" + $3.v + ";\n";
 			}
-			| ENTRADA TK_SHIFTR TK_ID '[' E ']' {
+			/*| ENTRADA TK_SHIFTR TK_ID '[' E ']' {
 				$$.v = geraNomeVar();
 				$$.c = $1.c + $5.c
 				+ "\tcin >> " + $$.v + ";\n"
 				+ "\t" + $3.v + "[" + $5.v + "] = " + $$.v + ";\n";
-			}
+			}*/
 			| TK_CONSOLE TK_SHIFTR TK_ID {
 				$$.c = "\tcin >> " + $3.v + ";\n";
 			}
-			| TK_CONSOLE TK_SHIFTR TK_ID '[' E ']' {
+			/*| TK_CONSOLE TK_SHIFTR TK_ID '[' E ']' {
 				$$.v = geraNomeVar();
 				$$.c = $5.c
 				+ "\tcin >> " + $$.v + ";\n"
 				+ "\t" + $3.v + "[" + $5.v + "] = " + $$.v + ";\n";
-			}
+			}*/
 			;
 
 SAIDA:	SAIDA TK_SHIFTL E {
 			$$.c = $1.c + $3.c
 			+ "\t" + "cout << " + $3.v + ";\n";
 		}
-		| SAIDA TK_SHIFTL STRING {
+		/*| SAIDA TK_SHIFTL STRING {
 			$$.c = $1.c
 			+ "\tcout << " + $3.v + ";\n";
-		}
+		}*/
 		| TK_CONSOLE TK_SHIFTL E {
 			$$.c = $3.c
 			+ "\tcout << " + $3.v + ";\n";
 		}
-		| TK_CONSOLE TK_SHIFTL STRING {
+		/*| TK_CONSOLE TK_SHIFTL STRING {
 			$$.c = string("\tcout << ") + $3.v + ";\n";
-		}
+		}*/
 		;
 
-STRING:	CSTR
+/*STRING:	CSTR
 		| TK_ENDL {
 			$$.v = "endl";
 		}
-		;
+		;*/
 
 FOR:	TK_FOR TK_ID TK_IN '[' E TK_2PT E ']' BLOCK {
-			string cond = geraNomeVar();
+			string cond = geraNomeVar("int");
 			$$.c = $5.c	+ $7.c
 			+ "\t" + $2.v + " = " + $5.v + ";\n"
 			+ "\t" + geraNomeLabel("for_mid") + ":\n"
@@ -191,64 +202,48 @@ ATR:	TK_ID '=' E {
 			$$.c = $3.c
 			+ "\t" + $1.v + " = " + $3.v + ";\n";
 		}
-		| TK_ID '[' E ']' '=' E {
+		/*| TK_ID '[' E ']' '=' E {
 			$$.c = $3.c + $6.c
 			+ "\t" + $1.v + "[" + $3.v + "] = " + $6.v + ";\n";
 			$$.v = $6.v;
-		}
+		}*/
 		;
 
 E:	E '+' E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + "+" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E '-' E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + "-" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E '*' E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + "*" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E '/' E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + "/" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E '%' E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + "%" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E '>' E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + ">" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E '<' E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + "<" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E TK_EQUALS E {
-		$$.v = geraNomeVar();
-		$$.c = $1.c + $3.c
-		+ "\t" + $$.v + " = " + $1.v + "==" + $3.v + ";\n";
+		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| V
 	;
 
-V:	TK_ID '[' E ']' {
+V:	/*TK_ID '[' E ']' {
 		$$.v = geraNomeVar();
 		$$.c = $3.c
 		+ "\t" + $$.v + " = " + $1.v + "[" + $3.v + "];\n";
 	}
-	| TK_ID {
+	|*/ TK_ID {
 		$$.v = $1.v;
-		$$.t = var_symtab[$$.v];
+		$$.t = buscaTipoVar($$.v);
 	}
 	| CINT {
 		$$.v = $1.v;
@@ -277,27 +272,54 @@ void yyerror (const char* st) {
 	exit (0);
 }
 
-string geraNomeVar() {
-	char buf[20] = "";
+Tipo buscaTipoVar (string v) {
+	if (var_symtab.find(v) == var_symtab.end()) {
+		string temp = "Variavel " + v + " nao definida";
+		yyerror(temp.c_str());
+	}
+	return var_symtab[v];
+}
 
-	sprintf (buf, "_t%d", nVar++);
-
-	return buf;
+string geraNomeVar(Tipo t) {
+	return "_" + t + "_t" + to_string(nVar[t]++);
 }
 
 string geraNomeLabel (string nome) {
-	return "_" + nome + to_string(nLabel);
+	return "_label_" + nome + to_string(nLabel);
 }
 
 string declaraVars() {
-	string vars = "int __";
+	string vars;
 
-	for (int i = 0; i < nVar; i++) {
-		vars += ", _t" + to_string(i);
+	for (auto p : nVar) {
+		if (p.second > 0)
+			vars += p.first + " _" + p.first + "_t0";
+		for (int i = 1; i < p.second; i++) {
+			vars += " _" + p.first + "_t" + to_string(i);
+		}
+		vars += ";\n";
 	}
-	vars += ";\n";
 
 	return vars;
+}
+
+Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b) {
+  return resOpr[operador + a + b];
+}
+
+Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
+  Atributos r;
+
+  r.t = buscaTipoOperacao (operador, a.t, b.t);
+  if (r.t == "") {
+    string temp = "Operacao '" + operador + "' inválida entre " + a.t + " e " + b.t;
+    yyerror( temp.c_str() );
+  }
+
+  r.v = geraNomeVar( r.t );
+  r.c = a.c + b.c +
+        "\t" + r.v + " = " + a.v + operador + b.v + ";\n";
+  return r;
 }
 
 int main () {
