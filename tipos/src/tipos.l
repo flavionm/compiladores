@@ -20,7 +20,9 @@ STR     \"([^\"\n]|\\\"|\"\")*\"
 {STR}	{ return token (CSTR); }
 
 "int"	{ return token (TK_INT); }
-"double"	{ return token (TK_DOUBLE); }
+"real"	{ return token (TK_REAL); }
+"boolean"	{ return token (TK_BOOL); }
+"char"	{ return token (TK_CHAR); }
 "string"	{ return token (TK_STRING); }
 "console"	{ return token (TK_CONSOLE); }
 ">>"	{ return token (TK_SHIFTR); }

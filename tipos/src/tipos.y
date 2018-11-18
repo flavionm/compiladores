@@ -8,6 +8,7 @@
 using namespace std;
 
 #define YYSTYPE Atributos
+#define SSIZE string("257")
 
 int linha = 1;
 int coluna = 1;
@@ -21,17 +22,7 @@ struct Atributos {
 	int linha;
 };
 
-map<string, Tipo> var_symtab;
-map<string,Tipo> resOpr = {
-	{ "+intint", "int" }, { "+intdouble", "double" }, { "+doubleint", "double" }, { "+doubledouble", "double" },
-	{ "+charchar", "string" }, { "+charstring", "string" }, { "+stringchar", "string" }, { "+stringstring", "string" },
-	{ "+charint", "int" }, { "+intchar", "int" },
-	{ "-intint", "int" }, { "-intdouble", "double" }, { "-doubleint", "double" }, { "-doubledouble", "double" },
-	{ "-charchar", "string" }, { "-charstring", "string" }, { "-stringchar", "string" }, { "-stringstring", "string" },
-	{ "-charint", "int" }, { "-intchar", "int" }
-};
-
-int yylex();
+extern "C" int yylex();
 int yyparse();
 void yyerror (const char *);
 
@@ -42,14 +33,34 @@ string declaraVars();
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b);
 Atributos geraCodigoOperador (string operador, Atributos a, Atributos b);
 
-map<Tipo, int> nVar;
+map<Tipo, Tipo> impl {
+	{"int", "int"}, {"real", "double"}, {"bool", "int"},
+	{"char", "char"}, {"string", "char[" + SSIZE + "]"}
+};
+map<Tipo, int> nVar {
+	{"int", 0}, {"real", 0}, {"bool", 0}, {"char", 0}, {"string", 0}
+} ;
 int nLabel = 0;
+map<string, Tipo> var_symtab {};
+map<string,Tipo> resOpr = {
+	{"+intint", "int"}, {"+intreal", "real"}, {"+realint", "real"}, {"+realreal", "real"},
+	{"+charchar", "string"}, {"+charstring", "string"}, {"+stringchar", "string"}, {"+stringstring", "string"},
+	{"+charint", "int"}, {"+intchar", "int"}, {"+charreal", "real"}, {"+realchar", "real"},
+	{"*intint", "int"}, {"*intreal", "real"}, {"*realint", "real"}, {"*realreal", "real"},
+	{"*charint", "int"}, {"*intchar", "int"}, {"*charreal", "real"}, {"*realchar", "real"},
+	{"%intint", "int"},
+	{"%charint", "int"}, {"%intchar", "int"},
+	{">intint", "bool"}, {">intreal", "bool"}, {">realint", "bool"}, {">realreal", "bool"},
+	{">charchar", "bool"}, {">charstring", "bool"}, {">stringchar", "bool"}, {">stringstring", "bool"},
+	{">charint", "bool"}, {">intchar", "bool"}, {">charreal", "bool"}, {">realchar", "bool"}
+};
 
 %}
 
 %start S
-%token CINT CSTR CDOUBLE TK_ID TK_INT TK_DOUBLE TK_STRING TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
+%token CINT CSTR CDOUBLE TK_ID TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE TK_ENDL TK_BEGIN TK_END
+%token TK_INT TK_REAL TK_BOOL TK_CHAR TK_STRING 
 
 %right '='
 %nonassoc '>' '<' TK_EQUALS
@@ -70,9 +81,7 @@ S:	CMDS {
 	}
 	;
 
-BLOCK:	TK_BEGIN CMDS TK_END {
-			$$.c = $2.c;
-		}
+BLOCK:	TK_BEGIN CMDS TK_END
 		| CMD
 		;
 
@@ -98,23 +107,23 @@ DECLVAR:	DECLVAR ',' VAR {
 				var_symtab[$3.v] = $1.v;
 			}
 			| TYPE VAR {
-				$$.c = "\t" + $1.v + " " + $2.v;
+				$$.c = "\t" + impl[$1.v] + " " + $2.v;
 				$$.v = $1.v;
 				var_symtab[$2.v] = $1.v;
 			}
 			;
 
 TYPE:	TK_INT
-		| TK_DOUBLE
+		| TK_REAL
+		| TK_BOOL
+		| TK_CHAR
 		| TK_STRING
 		;
 
 VAR:	/*TK_ID '[' CINT ']' {
 			$$.c = $1.v + "[" + $3.v + "]";
 		}
-		|*/ TK_ID {
-			$$.v = $1.v;
-		}
+		|*/ TK_ID
 		;
 
 ENTRADA:	ENTRADA TK_SHIFTR TK_ID {
@@ -140,9 +149,9 @@ ENTRADA:	ENTRADA TK_SHIFTR TK_ID {
 
 SAIDA:	SAIDA TK_SHIFTL E {
 			$$.c = $1.c + $3.c
-			+ "\t" + "cout << " + $3.v + ";\n";
+			+ "\tcout << " + $3.v + ";\n";
 		}
-		/*| SAIDA TK_SHIFTL STRING {
+		/*| SAIDA TK_SHIFTL TK_ENDL {
 			$$.c = $1.c
 			+ "\tcout << " + $3.v + ";\n";
 		}*/
@@ -150,19 +159,13 @@ SAIDA:	SAIDA TK_SHIFTL E {
 			$$.c = $3.c
 			+ "\tcout << " + $3.v + ";\n";
 		}
-		/*| TK_CONSOLE TK_SHIFTL STRING {
-			$$.c = string("\tcout << ") + $3.v + ";\n";
+		/*TK_CONSOLE TK_SHIFTL TK_ENDL {
+			$$.c = "\tcout << " + $3.v + ";\n";
 		}*/
 		;
 
-/*STRING:	CSTR
-		| TK_ENDL {
-			$$.v = "endl";
-		}
-		;*/
-
 FOR:	TK_FOR TK_ID TK_IN '[' E TK_2PT E ']' BLOCK {
-			string cond = geraNomeVar("int");
+			string cond = geraNomeVar("bool");
 			$$.c = $5.c	+ $7.c
 			+ "\t" + $2.v + " = " + $5.v + ";\n"
 			+ "\t" + geraNomeLabel("for_mid") + ":\n"
@@ -198,7 +201,6 @@ IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK ';' {
 	;
 
 ATR:	TK_ID '=' E {
-			$$.v = $3.v;
 			$$.c = $3.c
 			+ "\t" + $1.v + " = " + $3.v + ";\n";
 		}
@@ -243,7 +245,7 @@ V:	/*TK_ID '[' E ']' {
 	}
 	|*/ TK_ID {
 		$$.v = $1.v;
-		$$.t = buscaTipoVar($$.v);
+		$$.t = buscaTipoVar($1.v);
 	}
 	| CINT {
 		$$.v = $1.v;
@@ -251,7 +253,7 @@ V:	/*TK_ID '[' E ']' {
 	}
 	| CDOUBLE {
 		$$.v = $1.v;
-		$$.t = "double";
+		$$.t = "real";
 	}
 	| CSTR {
 		$$.v = $1.v;
@@ -274,7 +276,7 @@ void yyerror (const char* st) {
 
 Tipo buscaTipoVar (string v) {
 	if (var_symtab.find(v) == var_symtab.end()) {
-		string temp = "Variavel " + v + " nao definida";
+		string temp = "Variavel '" + v + "' nao definida\n";
 		yyerror(temp.c_str());
 	}
 	return var_symtab[v];
@@ -292,34 +294,43 @@ string declaraVars() {
 	string vars;
 
 	for (auto p : nVar) {
-		if (p.second > 0)
-			vars += p.first + " _" + p.first + "_t0";
-		for (int i = 1; i < p.second; i++) {
-			vars += " _" + p.first + "_t" + to_string(i);
+		if (p.second > 0) {
+			vars += impl[p.first] + " _" + p.first + "_t0";
+			for (int i = 1; i < p.second; i++) {
+				vars += " _" + p.first + "_t" + to_string(i);
+			}
+			vars += ";\n";
 		}
-		vars += ";\n";
 	}
 
 	return vars;
 }
 
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b) {
-  return resOpr[operador + a + b];
+	string oprGroup;
+	if (operador == "-" || operador == "*" || operador == "/")
+		oprGroup = "*";
+	else if (operador == ">" || operador == "<" || operador == "==")
+			oprGroup = ">";
+	else 
+		oprGroup = operador;
+	return resOpr[oprGroup + a + b];
 }
 
 Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
-  Atributos r;
+	Atributos r;
 
-  r.t = buscaTipoOperacao (operador, a.t, b.t);
-  if (r.t == "") {
-    string temp = "Operacao '" + operador + "' inválida entre " + a.t + " e " + b.t;
-    yyerror( temp.c_str() );
-  }
+	r.t = buscaTipoOperacao (operador, a.t, b.t);
+	if (r.t == "") {
+		string temp = "Operacao '" + operador + "' inválida entre " + a.t + " e " + b.t;
+		yyerror( temp.c_str() );	
+	}
 
-  r.v = geraNomeVar( r.t );
-  r.c = a.c + b.c +
-        "\t" + r.v + " = " + a.v + operador + b.v + ";\n";
-  return r;
+	r.v = geraNomeVar( r.t );
+	r.c = a.c + b.c 
+	+ "\t" + r.v + " = " + a.v + operador + b.v + ";\n";
+	
+	return r;
 }
 
 int main () {
