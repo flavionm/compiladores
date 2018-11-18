@@ -18,13 +18,14 @@ EXECUTABLE	:= main
 endif
 LOUT		:= lex.yy.c
 YOUT		:= y.tab.c
+MAIN		:= main.cpp
 IN			:= program.mil
 OUT			:= program.cpp
 TEST		:= gabarito
 EXEC		:= program
 
-all: $(BIN)/$(YOUT)
-	$(CC) $(C_FLAGS) -I$(INCLUDE) -L$(LIB) $^ -o ${BIN}/${EXECUTABLE} $(LIBRARIES)
+all: $(BIN)/$(YOUT) $(SRC)/$(MAIN)
+	$(CC) $(C_FLAGS) -I$(INCLUDE) -L$(LIB) $(SRC)/$(MAIN) -o ${BIN}/${EXECUTABLE} $(LIBRARIES)
 
 clean:
 	$(RM) $(BIN)/*

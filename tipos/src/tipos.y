@@ -332,9 +332,3 @@ Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 
 	return r;
 }
-
-int main () {
-	yyparse();
-
-	return 0;
-}
