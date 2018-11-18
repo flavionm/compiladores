@@ -60,7 +60,7 @@ map<string,Tipo> resOpr = {
 %start S
 %token CINT CSTR CDOUBLE TK_ID TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE TK_ENDL TK_BEGIN TK_END
-%token TK_INT TK_REAL TK_BOOL TK_CHAR TK_STRING 
+%token TK_INT TK_REAL TK_BOOL TK_CHAR TK_STRING
 
 %right '='
 %nonassoc '>' '<' TK_EQUALS
@@ -73,7 +73,7 @@ S:	CMDS {
 		$$.c = string("#include <iostream>\n\n")
 		+ "using namespace std;\n\n"
 		+ "int main () {\n"
-		+ "\t" + declaraVars() + "\n"
+		+ declaraVars() + "\n"
 		+ $1.c + "\n"
 		+ "\treturn 0;\n"
 		+ "}";
@@ -151,17 +151,17 @@ SAIDA:	SAIDA TK_SHIFTL E {
 			$$.c = $1.c + $3.c
 			+ "\tcout << " + $3.v + ";\n";
 		}
-		/*| SAIDA TK_SHIFTL TK_ENDL {
+		| SAIDA TK_SHIFTL TK_ENDL {
 			$$.c = $1.c
 			+ "\tcout << " + $3.v + ";\n";
-		}*/
+		}
 		| TK_CONSOLE TK_SHIFTL E {
 			$$.c = $3.c
 			+ "\tcout << " + $3.v + ";\n";
 		}
-		/*TK_CONSOLE TK_SHIFTL TK_ENDL {
+		| TK_CONSOLE TK_SHIFTL TK_ENDL {
 			$$.c = "\tcout << " + $3.v + ";\n";
-		}*/
+		}
 		;
 
 FOR:	TK_FOR TK_ID TK_IN '[' E TK_2PT E ']' BLOCK {
@@ -295,7 +295,7 @@ string declaraVars() {
 
 	for (auto p : nVar) {
 		if (p.second > 0) {
-			vars += impl[p.first] + " _" + p.first + "_t0";
+			vars += "\t" + impl[p.first] + " _" + p.first + "_t0";
 			for (int i = 1; i < p.second; i++) {
 				vars += " _" + p.first + "_t" + to_string(i);
 			}
@@ -312,7 +312,7 @@ Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b) {
 		oprGroup = "*";
 	else if (operador == ">" || operador == "<" || operador == "==")
 			oprGroup = ">";
-	else 
+	else
 		oprGroup = operador;
 	return resOpr[oprGroup + a + b];
 }
@@ -323,13 +323,13 @@ Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 	r.t = buscaTipoOperacao (operador, a.t, b.t);
 	if (r.t == "") {
 		string temp = "Operacao '" + operador + "' inválida entre " + a.t + " e " + b.t;
-		yyerror( temp.c_str() );	
+		yyerror( temp.c_str() );
 	}
 
 	r.v = geraNomeVar( r.t );
-	r.c = a.c + b.c 
+	r.c = a.c + b.c
 	+ "\t" + r.v + " = " + a.v + operador + b.v + ";\n";
-	
+
 	return r;
 }
 
