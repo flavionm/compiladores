@@ -45,7 +45,7 @@ ${BIN}/${OUT}: $(BIN)/$(EXECUTABLE) $(SRC)/$(IN)
 	./${RUN}/${TEST} < $@
 
 $(BIN)/$(YOUT): $(SRC)/*.y $(BIN)/$(LOUT)
-	$(YY) --output=$@ $(SRC)/*.y
+	$(YY) --output=$@ -v $(SRC)/*.y
 
 $(BIN)/$(LOUT): $(SRC)/*.l
 	$(LL) -o $@ $^

@@ -85,6 +85,10 @@ S:	CMDS {
 	}
 	;
 
+ANYCMD:	BLOCK
+		| CMD
+		;
+
 BLOCK:	TK_BEGIN CMDS TK_END {
 			$$ = $2;
 		}
@@ -189,7 +193,7 @@ FOR:	TK_FOR TK_ID TK_IN '[' E TK_2PT E ']' BLOCK {
 		}
 		;
 
-IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK ';' {
+IF:	TK_IF E TK_THEN ANYCMD TK_ELSE BLOCK ';' {
 		$$.c = $2.c
 		+ "\tif (" + $2.v + ") goto " + geraNomeLabel("if_true") + ";\n"
 		+ $6.c
@@ -199,7 +203,7 @@ IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK ';' {
 		+ "\t" + geraNomeLabel("end_if") + ":\n";
 		nLabel++;
 	}
-	| TK_IF E TK_THEN BLOCK TK_ELSE CMD {
+	| TK_IF E TK_THEN ANYCMD TK_ELSE CMD {
 		$$.c = $2.c
 		+ "\tif (" + $2.v + ") goto " + geraNomeLabel("if_true") + ";\n"
 		+ $6.c
@@ -387,7 +391,7 @@ Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 	}
 
 	r.v = geraNomeVar (r.t);
-	if (r.t == "string") {
+	if (a.t == "string" || b.t == "string") {
 		if (a.t == "char")
 			strToChar (a);
 		if (b.t == "char")
