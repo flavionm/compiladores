@@ -24,7 +24,9 @@ OUT			:= program.cpp
 TEST		:= gabarito
 EXEC		:= program
 
-all: $(BIN)/$(YOUT) $(SRC)/$(MAIN)
+all: $(BIN)/$(EXECUTABLE)
+
+$(BIN)/$(EXECUTABLE): $(BIN)/$(YOUT) $(SRC)/$(MAIN)
 	$(CC) $(C_FLAGS) -I$(INCLUDE) -L$(LIB) $(SRC)/$(MAIN) -o ${BIN}/${EXECUTABLE} $(LIBRARIES)
 
 clean:
@@ -36,8 +38,8 @@ try: ${BIN}/${EXEC}
 run: ${BIN}/${OUT}
 	$(CC) ${C_FLAGS} $^ -o ${BIN}/${EXEC}
 
-${BIN}/${OUT}: all
-	./$(BIN)/$(EXECUTABLE) < ${SRC}/${IN} > $@
+${BIN}/${OUT}: $(BIN)/$(EXECUTABLE)
+	./$^ < ${SRC}/${IN} > $@
 	./${RUN}/${TEST} < $@
 
 $(BIN)/$(YOUT): $(SRC)/*.y $(BIN)/$(LOUT)

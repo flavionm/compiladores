@@ -7,7 +7,8 @@ LETRA	[A-Za-z_]
 INT		{DIGITO}+
 DOUBLE	{DIGITO}+("."{DIGITO}+)?
 ID		{LETRA}({LETRA}|{DIGITO})*
-STR     \"([^\"\n]|\\\"|\"\")*\"
+STR		\"([^\"\n]|\\\"|\"\")*\"
+CHAR	\'.\'
 
 %%
 
@@ -18,6 +19,7 @@ STR     \"([^\"\n]|\\\"|\"\")*\"
 {INT}	{return token (CINT);}
 {DOUBLE}	{return token (CDOUBLE);}
 {STR}	{return token (CSTR);}
+{CHAR}	{return token (CCHAR);}
 
 "int"	{return token (TK_INT);}
 "real"	{return token (TK_REAL);}

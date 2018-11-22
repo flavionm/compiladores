@@ -8,7 +8,7 @@
 using namespace std;
 
 #define YYSTYPE Atributos
-#define SSIZE string("257")
+#define SSIZE "257"
 
 int linha = 1;
 int coluna = 1;
@@ -30,12 +30,14 @@ Tipo buscaTipoVar (string v);
 string geraNomeVar (Tipo t);
 string geraNomeLabel (string);
 string declaraVars();
+bool isArithmethic (string operador);
+bool isComparison (string operador);
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b);
 Atributos geraCodigoOperador (string operador, Atributos a, Atributos b);
 
 map<Tipo, Tipo> impl {
 	{"int", "int"}, {"real", "double"}, {"bool", "int"},
-	{"char", "char"}, {"string", "char[" + SSIZE + "]"}
+	{"char", "char"}, {"string", "char"}
 };
 map<Tipo, int> nVar {
 	{"int", 0}, {"real", 0}, {"bool", 0}, {"char", 0}, {"string", 0}
@@ -58,7 +60,7 @@ map<string,Tipo> resOpr = {
 %}
 
 %start S
-%token CINT CSTR CDOUBLE TK_ID TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
+%token CINT CSTR CDOUBLE CCHAR TK_ID TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE TK_ENDL TK_BEGIN TK_END
 %token TK_INT TK_REAL TK_BOOL TK_CHAR TK_STRING
 
@@ -70,7 +72,8 @@ map<string,Tipo> resOpr = {
 %%
 
 S:	CMDS {
-		$$.c = string("#include <iostream>\n\n")
+		$$.c = string("#include <iostream>\n")
+		+ "#include <string.h>\n\n"
 		+ "using namespace std;\n\n"
 		+ "int main () {\n"
 		+ declaraVars() + "\n"
@@ -81,7 +84,9 @@ S:	CMDS {
 	}
 	;
 
-BLOCK:	TK_BEGIN CMDS TK_END
+BLOCK:	TK_BEGIN CMDS TK_END {
+			$$ = $2;
+		}
 		| CMD
 		;
 
@@ -91,9 +96,7 @@ CMDS:	CMDS CMD {
 		| CMD
 		;
 
-CMD:	DECLVAR ';' {
-			$$.c = $1.c + ";\n";
-		}
+CMD:	DECLVAR ';'
 		| ENTRADA ';'
 		| SAIDA ';'
 		| ATR ';'
@@ -102,12 +105,19 @@ CMD:	DECLVAR ';' {
 		;
 
 DECLVAR:	DECLVAR ',' VAR {
-				$$.c = $1.c + ", " + $3.v;
+				string array = "";
+				if ($1.v == "string")
+					array = string("[") + SSIZE + "]";
+				$$.c = $1.c
+				+ "\t" + impl[$1.v] + " " + $3.v + array + ";\n";
 				$$.v = $1.v;
 				var_symtab[$3.v] = $1.v;
 			}
 			| TYPE VAR {
-				$$.c = "\t" + impl[$1.v] + " " + $2.v;
+				string array = "";
+				if ($1.v == "string")
+					array = string("[") + SSIZE + "]";
+				$$.c = "\t" + impl[$1.v] + " " + $2.v + array + ";\n";
 				$$.v = $1.v;
 				var_symtab[$2.v] = $1.v;
 			}
@@ -201,8 +211,13 @@ IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK ';' {
 	;
 
 ATR:	TK_ID '=' E {
-			$$.c = $3.c
-			+ "\t" + $1.v + " = " + $3.v + ";\n";
+			if ($3.t == "string") {
+				$$.c = $3.c
+				+ "\tstrncpy (" + $1.v + ", " + $3.v + ", " + SSIZE + ");\n";
+			} else {
+				$$.c = $3.c
+				+ "\t" + $1.v + " = " + $3.v + ";\n";
+			}
 		}
 		/*| TK_ID '[' E ']' '=' E {
 			$$.c = $3.c + $6.c
@@ -259,6 +274,10 @@ V:	/*TK_ID '[' E ']' {
 		$$.v = $1.v;
 		$$.t = "string";
 	}
+	| CCHAR {
+		$$.v = $1.v;
+		$$.t = "char";
+	}
 	| '(' E ')' {
 		$$ = $2;
 	}
@@ -294,23 +313,29 @@ string declaraVars() {
 	string vars;
 
 	for (auto p : nVar) {
-		if (p.second > 0) {
-			vars += "\t" + impl[p.first] + " _" + p.first + "_t0";
-			for (int i = 1; i < p.second; i++) {
-				vars += " _" + p.first + "_t" + to_string(i);
-			}
-			vars += ";\n";
-		}
+		string array = "";
+		if (p.first == "string")
+			array = string("[") + SSIZE + "]";
+		for (int i = 0; i < p.second; i++)
+			vars += "\t" + impl[p.first] + " _" + p.first + "_t" + to_string(i) + array + ";\n";
 	}
 
 	return vars;
 }
 
+bool isArithmethic (string operador) {
+	return operador == "-" || operador == "*" || operador == "/";
+}
+
+bool isComparison (string operador) {
+	return operador == ">" || operador == "<" || operador == "==";
+}
+
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b) {
 	string oprGroup;
-	if (operador == "-" || operador == "*" || operador == "/")
+	if (isArithmethic(operador))
 		oprGroup = "*";
-	else if (operador == ">" || operador == "<" || operador == "==")
+	else if (isComparison(operador))
 			oprGroup = ">";
 	else
 		oprGroup = operador;
@@ -326,9 +351,26 @@ Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 		yyerror( temp.c_str() );
 	}
 
-	r.v = geraNomeVar( r.t );
-	r.c = a.c + b.c
-	+ "\t" + r.v + " = " + a.v + operador + b.v + ";\n";
+	r.v = geraNomeVar (r.t);
+	if (r.t == "string") {
+		if (operador == "+") {
+			r.v = geraNomeVar (r.t);
+			r.c = a.c + b.c
+			+ "\tstrncpy (" + r.v + ", " + a.v + ", " + SSIZE + ");\n"
+			+ "\tstrncat (" + r.v + ", " + b.v + ", " + SSIZE + ");\n";
+		} else if (isComparison(operador)) {
+			r.v = geraNomeVar ("bool");
+			string tempVar = geraNomeVar("int");
+			r.c = a.c + b.c
+			+ "\t" + tempVar + " = strncmp (" + a.v + ", " + b.v + ", " + SSIZE + ");\n"
+			+ "\t" + r.v + " = " + tempVar + operador + "0;\n";
+		}
+	}
+	else {
+		r.v = geraNomeVar (r.t);
+		r.c = a.c + b.c
+		+ "\t" + r.v + " = " + a.v + " " + operador + " " + b.v + ";\n";
+	}
 
 	return r;
 }
