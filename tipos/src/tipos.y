@@ -33,6 +33,7 @@ string declaraVars();
 bool isArithmethic (string operador);
 bool isComparison (string operador);
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b);
+void strToChar (Atributos& a);
 Atributos geraCodigoOperador (string operador, Atributos a, Atributos b);
 
 map<Tipo, Tipo> impl {
@@ -62,10 +63,10 @@ map<string,Tipo> resOpr = {
 %start S
 %token CINT CSTR CDOUBLE CCHAR TK_ID TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE TK_ENDL TK_BEGIN TK_END
-%token TK_INT TK_REAL TK_BOOL TK_CHAR TK_STRING
+%token TK_INT TK_REAL TK_BOOL TK_CHAR TK_STRING TK_LESS_E TK_GREAT_E TK_DIFF
 
 %right '='
-%nonassoc '>' '<' TK_EQUALS
+%nonassoc '>' '<' TK_EQUALS TK_LESS_E TK_GREAT_E TK_DIFF
 %left '+' '-'
 %left '*' '/' '%'
 
@@ -87,7 +88,6 @@ S:	CMDS {
 BLOCK:	TK_BEGIN CMDS TK_END {
 			$$ = $2;
 		}
-		| CMD
 		;
 
 CMDS:	CMDS CMD {
@@ -199,7 +199,26 @@ IF:	TK_IF E TK_THEN BLOCK TK_ELSE BLOCK ';' {
 		+ "\t" + geraNomeLabel("end_if") + ":\n";
 		nLabel++;
 	}
-	| TK_IF E TK_THEN BLOCK {
+	| TK_IF E TK_THEN BLOCK TK_ELSE CMD {
+		$$.c = $2.c
+		+ "\tif (" + $2.v + ") goto " + geraNomeLabel("if_true") + ";\n"
+		+ $6.c
+		+ "\tgoto " + geraNomeLabel("end_if") + ";\n"
+		+ "\t" + geraNomeLabel("if_true") + ":\n"
+		+ $4.c
+		+ "\t" + geraNomeLabel("end_if") + ":\n";
+		nLabel++;
+	}
+	| TK_IF E TK_THEN BLOCK ';' {
+		$$.c = $2.c
+		+ "\tif (" + $2.v + ") goto " + geraNomeLabel("if_true") + ";\n"
+		+ "\tgoto " + geraNomeLabel("end_if") + ";\n"
+		+ "\t" + geraNomeLabel("if_true") + ":\n"
+		+ $4.c
+		+ "\t" + geraNomeLabel("end_if") + ":\n";
+		nLabel++;
+	}
+	| TK_IF E TK_THEN CMD {
 		$$.c = $2.c
 		+ "\tif (" + $2.v + ") goto " + geraNomeLabel("if_true") + ";\n"
 		+ "\tgoto " + geraNomeLabel("end_if") + ";\n"
@@ -248,6 +267,15 @@ E:	E '+' E {
 		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| E TK_EQUALS E {
+		$$ = geraCodigoOperador ($2.v, $1, $3);
+	}
+	| E TK_LESS_E E {
+		$$ = geraCodigoOperador ($2.v, $1, $3);
+	}
+	| E TK_GREAT_E E {
+		$$ = geraCodigoOperador ($2.v, $1, $3);
+	}
+	| E TK_DIFF E {
 		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
 	| V
@@ -328,7 +356,7 @@ bool isArithmethic (string operador) {
 }
 
 bool isComparison (string operador) {
-	return operador == ">" || operador == "<" || operador == "==";
+	return operador == ">" || operador == "<" || operador == "==" || operador == ">=" || operador == "<=" || operador == "<>";
 }
 
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b) {
@@ -342,6 +370,13 @@ Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b) {
 	return resOpr[oprGroup + a + b];
 }
 
+void strToChar (Atributos& a) {
+	string temp = geraNomeVar ("string");
+	a.c += "\t" + temp + "[0] = " + a.v + ";\n"
+	+ "\t" + temp + "[1] = 0;\n";
+	a.v = temp;
+}
+
 Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 	Atributos r;
 
@@ -353,14 +388,18 @@ Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 
 	r.v = geraNomeVar (r.t);
 	if (r.t == "string") {
+		if (a.t == "char")
+			strToChar (a);
+		if (b.t == "char")
+			strToChar (b);
 		if (operador == "+") {
 			r.v = geraNomeVar (r.t);
 			r.c = a.c + b.c
 			+ "\tstrncpy (" + r.v + ", " + a.v + ", " + SSIZE + ");\n"
 			+ "\tstrncat (" + r.v + ", " + b.v + ", " + SSIZE + ");\n";
-		} else if (isComparison(operador)) {
+		} else if (isComparison (operador)) {
 			r.v = geraNomeVar ("bool");
-			string tempVar = geraNomeVar("int");
+			string tempVar = geraNomeVar ("int");
 			r.c = a.c + b.c
 			+ "\t" + tempVar + " = strncmp (" + a.v + ", " + b.v + ", " + SSIZE + ");\n"
 			+ "\t" + r.v + " = " + tempVar + operador + "0;\n";

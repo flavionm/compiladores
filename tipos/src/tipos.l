@@ -14,7 +14,7 @@ CHAR	\'.\'
 
 "\t"	{coluna += 4;}
 " "		{coluna++;}
-"\n"	{linha++; coluna = 0;}
+"\n"	{linha++; coluna = 1;}
 
 {INT}	{return token (CINT);}
 {DOUBLE}	{return token (CDOUBLE);}
@@ -30,6 +30,9 @@ CHAR	\'.\'
 ">>"	{return token (TK_SHIFTR);}
 "<<"	{return token (TK_SHIFTL);}
 "=="	{return token (TK_EQUALS);}
+"<>"	{return token (TK_DIFF);}
+"<="	{return token (TK_LESS_E);}
+">="	{return token (TK_GREAT_E);}
 "for"	{return token (TK_FOR);}
 "in"	{return token (TK_IN);}
 ".."	{return token (TK_2PT);}

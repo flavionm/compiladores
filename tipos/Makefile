@@ -35,11 +35,13 @@ clean:
 try: ${BIN}/${EXEC}
 	./$^
 
-run: ${BIN}/${OUT}
-	$(CC) ${C_FLAGS} $^ -o ${BIN}/${EXEC}
+run: $(BIN)/$(EXEC)
 
-${BIN}/${OUT}: $(BIN)/$(EXECUTABLE)
-	./$^ < ${SRC}/${IN} > $@
+$(BIN)/$(EXEC): ${BIN}/${OUT}
+	$(CC) ${C_FLAGS} $^ -o $@
+
+${BIN}/${OUT}: $(BIN)/$(EXECUTABLE) $(SRC)/$(IN)
+	./$(BIN)/$(EXECUTABLE) < ${SRC}/${IN} > $@
 	./${RUN}/${TEST} < $@
 
 $(BIN)/$(YOUT): $(SRC)/*.y $(BIN)/$(LOUT)

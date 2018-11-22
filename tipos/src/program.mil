@@ -1,5 +1,10 @@
-string a, b, c;
-a = "hello, ";
-b = "world";
-c = b + "!";
-console << a + c + "!" << endl;
+string a, b;
+char ch;
+int i;
+console >> a;
+console >> b;
+for i in [0..5] begin
+  ch = 'A' + i;
+  b = ch + b + a;
+end;
+console << b << endl;
