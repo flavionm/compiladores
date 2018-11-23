@@ -32,16 +32,20 @@ string geraNomeLabel (string);
 string declaraVars();
 bool isArithmethic (string operador);
 bool isComparison (string operador);
+bool isLogical (string operador);
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b);
 void strToChar (Atributos& a);
 Atributos geraCodigoOperador (string operador, Atributos a, Atributos b);
 
 map<Tipo, Tipo> impl {
-	{"int", "int"}, {"real", "double"}, {"bool", "int"},
+	{"int", "int"}, {"real", "double"}, {"boolean", "int"},
 	{"char", "char"}, {"string", "char"}
 };
+map<string, string> opr_impl {
+	{"and", "&&"}, {"or", "||"}, {"not", "!"}, {"<>", "!="}
+};
 map<Tipo, int> nVar {
-	{"int", 0}, {"real", 0}, {"bool", 0}, {"char", 0}, {"string", 0}
+	{"int", 0}, {"real", 0}, {"boolean", 0}, {"char", 0}, {"string", 0}
 } ;
 int nLabel = 0;
 map<string, Tipo> var_symtab {};
@@ -53,9 +57,11 @@ map<string,Tipo> resOpr = {
 	{"*charint", "int"}, {"*intchar", "int"}, {"*charreal", "real"}, {"*realchar", "real"},
 	{"%intint", "int"},
 	{"%charint", "int"}, {"%intchar", "int"},
-	{">intint", "bool"}, {">intreal", "bool"}, {">realint", "bool"}, {">realreal", "bool"},
-	{">charchar", "bool"}, {">charstring", "bool"}, {">stringchar", "bool"}, {">stringstring", "bool"},
-	{">charint", "bool"}, {">intchar", "bool"}, {">charreal", "bool"}, {">realchar", "bool"}
+	{">intint", "boolean"}, {">intreal", "boolean"}, {">realint", "boolean"}, {">realreal", "boolean"},
+	{">charchar", "boolean"}, {">charstring", "boolean"}, {">stringchar", "boolean"}, {">stringstring", "boolean"},
+	{">charint", "boolean"}, {">intchar", "boolean"}, {">charreal", "boolean"}, {">realchar", "boolean"},
+	{"andintint", "boolean"}, {"andintboolean", "boolean"}, {"andbooleanint", "boolean"}, {"andbooleanboolean", "boolean"},
+	{"notint", "boolean"}, {"notboolean", "boolean"}
 };
 
 %}
@@ -64,8 +70,10 @@ map<string,Tipo> resOpr = {
 %token CINT CSTR CDOUBLE CCHAR TK_ID TK_CONSOLE TK_SHIFTR TK_SHIFTL TK_EQUALS
 %token TK_FOR TK_IN TK_2PT TK_IF TK_THEN TK_ELSE TK_ENDL TK_BEGIN TK_END
 %token TK_INT TK_REAL TK_BOOL TK_CHAR TK_STRING TK_LESS_E TK_GREAT_E TK_DIFF
+%token TK_TRUE TK_FALSE TK_AND TK_OR TK_NOT
 
 %right '='
+%left TK_AND TK_OR TK_NOT
 %nonassoc '>' '<' TK_EQUALS TK_LESS_E TK_GREAT_E TK_DIFF
 %left '+' '-'
 %left '*' '/' '%'
@@ -179,7 +187,7 @@ SAIDA:	SAIDA TK_SHIFTL E {
 		;
 
 FOR:	TK_FOR TK_ID TK_IN '[' E TK_2PT E ']' BLOCK {
-			string cond = geraNomeVar("bool");
+			string cond = geraNomeVar("boolean");
 			$$.c = $5.c	+ $7.c
 			+ "\t" + $2.v + " = " + $5.v + ";\n"
 			+ "\t" + geraNomeLabel("for_mid") + ":\n"
@@ -282,6 +290,18 @@ E:	E '+' E {
 	| E TK_DIFF E {
 		$$ = geraCodigoOperador ($2.v, $1, $3);
 	}
+	| E TK_AND E {
+		$$ = geraCodigoOperador ($2.v, $1, $3);
+	}
+	| E TK_OR E {
+		$$ = geraCodigoOperador ($2.v, $1, $3);
+	}
+	| TK_NOT E {
+		$$.t = buscaTipoOperacao ($1.v, $2.t, "");
+		$$.v = geraNomeVar ("boolean");
+		$$.c = $2.c
+		+ "\t" + $$.v + " = " + opr_impl[$1.v] + $2.v + ";\n";
+	}
 	| V
 	;
 
@@ -309,6 +329,14 @@ V:	/*TK_ID '[' E ']' {
 	| CCHAR {
 		$$.v = $1.v;
 		$$.t = "char";
+	}
+	| TK_TRUE {
+		$$.v = "1";
+		$$.t = "boolean";
+	}
+	| TK_FALSE {
+		$$.v = "0";
+		$$.t = "boolean";
 	}
 	| '(' E ')' {
 		$$ = $2;
@@ -363,15 +391,27 @@ bool isComparison (string operador) {
 	return operador == ">" || operador == "<" || operador == "==" || operador == ">=" || operador == "<=" || operador == "<>";
 }
 
+bool isLogical (string operador) {
+	return operador == "and" || operador == "or";
+}
+
 Tipo buscaTipoOperacao (string operador, Tipo a, Tipo b) {
 	string oprGroup;
 	if (isArithmethic(operador))
 		oprGroup = "*";
 	else if (isComparison(operador))
-			oprGroup = ">";
+		oprGroup = ">";
+	else if (isLogical(operador))
+		oprGroup = "and";
 	else
 		oprGroup = operador;
-	return resOpr[oprGroup + a + b];
+	Tipo t_opr = resOpr[oprGroup + a + b];
+	if (t_opr == "") {
+		string temp = "Operacao '" + operador + "' inválida entre " + a + " e " + b;
+		yyerror( temp.c_str() );
+	} else {
+		return t_opr;
+	}
 }
 
 void strToChar (Atributos& a) {
@@ -385,12 +425,6 @@ Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 	Atributos r;
 
 	r.t = buscaTipoOperacao (operador, a.t, b.t);
-	if (r.t == "") {
-		string temp = "Operacao '" + operador + "' inválida entre " + a.t + " e " + b.t;
-		yyerror( temp.c_str() );
-	}
-
-	r.v = geraNomeVar (r.t);
 	if (a.t == "string" || b.t == "string") {
 		if (a.t == "char")
 			strToChar (a);
@@ -402,14 +436,15 @@ Atributos geraCodigoOperador (string operador, Atributos a, Atributos b) {
 			+ "\tstrncpy (" + r.v + ", " + a.v + ", " + SSIZE + ");\n"
 			+ "\tstrncat (" + r.v + ", " + b.v + ", " + SSIZE + ");\n";
 		} else if (isComparison (operador)) {
-			r.v = geraNomeVar ("bool");
+			r.v = geraNomeVar ("boolean");
 			string tempVar = geraNomeVar ("int");
 			r.c = a.c + b.c
 			+ "\t" + tempVar + " = strncmp (" + a.v + ", " + b.v + ", " + SSIZE + ");\n"
 			+ "\t" + r.v + " = " + tempVar + operador + "0;\n";
 		}
-	}
-	else {
+	} else {
+		if (opr_impl[operador] != "")
+			operador = opr_impl[operador];
 		r.v = geraNomeVar (r.t);
 		r.c = a.c + b.c
 		+ "\t" + r.v + " = " + a.v + " " + operador + " " + b.v + ";\n";

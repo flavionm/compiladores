@@ -33,6 +33,9 @@ CHAR	\'.\'
 "<>"	{return token (TK_DIFF);}
 "<="	{return token (TK_LESS_E);}
 ">="	{return token (TK_GREAT_E);}
+"and"	{return token (TK_AND);}
+"or"	{return token (TK_OR);}
+"not"	{return token (TK_NOT);}
 "for"	{return token (TK_FOR);}
 "in"	{return token (TK_IN);}
 ".."	{return token (TK_2PT);}
@@ -42,6 +45,8 @@ CHAR	\'.\'
 "endl"	{return token (TK_ENDL);}
 "begin"	{return token (TK_BEGIN);}
 "end"	{return token (TK_END);}
+"true"	{return token (TK_TRUE);}
+"false"	{return token (TK_FALSE);}
 
 {ID}	{return token (TK_ID);}
 

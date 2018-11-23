@@ -1,7 +1,6 @@
-string a, b;
-a = "uma frase";
-console >> b;
-if b >= a then
-  console << "b é maior" << endl;
-else if a == "uma " + "frase" then
-  console << "a é igual" << endl;
+string a;
+a = "aba";
+if a >= 'b' then
+  console << 1;
+else if 'A' > 64 and 'A' < a then
+  console << "ok" ;
